@@ -11,13 +11,11 @@ Window {
 
     Plugin {
         id: mapPlugin
-        name: "osm" // "mapboxgl", "esri", ...
-        // specify plugin parameters if necessary
-        // PluginParameter {
-        //     name:
-        //     value:
-        // }
+        name: "osm" // OpenStreetMap map provider
     }
+
+// The following timer has been implemented to prevent the app crashing when removing markers with the remove method of the ListModel
+// The crash has been found to be caused by a bug in  Qt 5.10.1, solved in Qt5.11dev
 
     Timer {
         id: deleteTimer
@@ -27,6 +25,8 @@ Window {
         onTriggered: markerModel.removeElement_real()
     }
 
+// The ListModel where the position of the markers are stored
+// Also contains the function to draw and update the polygon when markers change, and the function to remove the marker with the timer to prevent crash
     ListModel {
         id: markerModel
         property int elementId : 0
@@ -39,10 +39,14 @@ Window {
                 }
         }
 
+        // Custom remove method implemented with a timer to prevent crashing
+
         function removeElement(idx) {
             markerModel.indexToRemove = idx
             deleteTimer.start()
         }
+
+        // Custom method to draw the plygon on the map
 
         function updatePolygon() {
             if (markerModel.count < 3)
@@ -65,7 +69,7 @@ Window {
         id: map
         anchors.fill: parent
         plugin: mapPlugin
-        center: QtPositioning.coordinate(43.59, 13.50) // coordinate iniziali
+        center: QtPositioning.coordinate(43.59, 13.50) // Starting coordinates: Ancona, the city where I am studying :)
         zoomLevel: 10
         z: 100
 
@@ -77,6 +81,9 @@ Window {
             color: 'blue'
             visible: true
         }
+
+        // Using a ListModel to store the coordinates we can easy apply the markers over a map using MapItemView
+        // I used the MapQuickItem class with an image component (a marker)
 
         MapItemView {
             id: mapView
@@ -97,8 +104,11 @@ Window {
                         width: zoomImage*100
                         height: zoomImage*100
 
+                        // The marker removal calls a custom removeElement method from the ListModel
+                        // The default remove method caused the app to crash due to a bug in Qt 5.10.1
+
                         MouseArea {
-                            id:  maPippo
+                            id:  maRemove
                             anchors.fill: parent
                             onDoubleClicked: {
                                 markerModel.removeElement(index)
@@ -109,6 +119,9 @@ Window {
                 }
             }
         }
+
+        // The following MouseArea is used to add the markers to the ListModel
+        // Markers removal is handled inside the MapItemView class
 
         MouseArea {
             anchors.fill: parent
